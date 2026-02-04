@@ -1,0 +1,19 @@
+body {
+    margin: 0;
+    padding: 0;
+}
+.header {
+    background-color: #42c2f5;
+    margin:0px;
+    width:100%;
+    padding-left:10px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    box-sizing: border-box;
+}
+
+.shadow {
+    background-color: #6d7778;
+    width: 100%;
+    height:5px;
+}
