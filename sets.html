@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MTG Format Viewer</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --border: #d1d5db;
+      --text: #1f2937;
+      --accent: #0f4bb8;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab-bar {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+      overflow-x: auto;
+      padding: 0.75rem;
+    }
+
+    .tab {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 7px;
+      padding: 0.45rem 0.8rem;
+      white-space: nowrap;
+      cursor: pointer;
+      font-size: 0.95rem;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .tab.about {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+
+    main {
+      max-width: 920px;
+      margin: 1.5rem auto;
+      padding: 0 1rem 2rem;
+    }
+
+    h1 {
+      margin: 0 0 0.75rem;
+      font-size: 1.8rem;
+    }
+
+    .alignright {
+      margin-left: auto;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav class="tab-bar">
+      <h1>Grim Festival</h1>
+      <div class="alignright">
+        <a class="tab" href="https://scryfall.com/sets/ori" target="_blank" rel="noopener noreferrer">Magic Origins</a>
+        <a class="tab" href="https://scryfall.com/sets/neo" target="_blank" rel="noopener noreferrer">Kamigawa: Neon Dynasty</a>
+        <a class="tab" href="https://scryfall.com/sets/ody" target="_blank" rel="noopener noreferrer">Odyssey</a>
+        <a class="tab" href="https://scryfall.com/sets/m13" target="_blank" rel="noopener noreferrer">Magic 2013</a>
+        <a class="tab" href="https://scryfall.com/sets/j22" target="_blank" rel="noopener noreferrer">Jumpstart 2022</a>
+        <a class="tab" href="https://scryfall.com/sets/drk" target="_blank" rel="noopener noreferrer">The Dark</a>
+        <a class="tab" href="https://scryfall.com/sets/tdm" target="_blank" rel="noopener noreferrer">Tarkir: Dragonstorm</a>
+        <a class="tab" href="https://scryfall.com/sets/10e" target="_blank" rel="noopener noreferrer">Tenth Edition</a>
+      </div>
+    </nav>
+  </header>
+  <main>
+    <h1>Grim Festival</h1>
+    <p>Deck size is 60 cards minimum.</p>
+    <p>4 of each card max except for basic lands.</p>
+    <p>Players start with 20 life.</p>
+    <p>Exactly 15 card sideboard required.</p>
+    <p>Play as best 2 of 3 in a 1v1.</p>
+    <p>We will play round robin, for the tournament.</p>
+    <p>All cards must be from the "In Boosters" section of the scryfall link.</p>
+  </main>
+</body>
+</html>
