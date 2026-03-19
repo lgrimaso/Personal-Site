@@ -34,5 +34,6 @@ body {
 .content {
   position: relative;
   z-index: 2; /* Places content above the SVG */
+  background-color:white;
   /* Add padding/margin as needed */
 }
