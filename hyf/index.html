@@ -4,7 +4,43 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Hack Your Friends</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      .game-shell {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: 220px minmax(720px, 1fr) 260px;
+        gap: 10px;
+        padding: 10px;
+      }
+      .tabletop {
+        display: grid;
+        grid-template-rows: 132px 54px minmax(250px, 1fr) 104px 176px;
+        gap: 10px;
+        min-width: 0;
+        min-height: 0;
+      }
+      .lobby-rail,
+      .control-rail {
+        display: grid;
+        align-content: start;
+        gap: 10px;
+        min-width: 0;
+      }
+      .brand-logo {
+        width: 52px;
+        height: 52px;
+        max-width: 52px;
+        max-height: 52px;
+        object-fit: contain;
+        display: block;
+      }
+      .preview-card-art.is-placeholder {
+        width: 120px;
+        max-width: 120px;
+        max-height: 168px;
+      }
+    </style>
+    <link rel="stylesheet" href="./styles.css?v=20260612-2" />
   </head>
   <body>
     <div class="game-shell">
@@ -148,6 +184,6 @@
       </button>
     </template>
 
-    <script src="./app.js"></script>
+    <script src="./app.js?v=20260612-2"></script>
   </body>
 </html>

@@ -27,6 +27,7 @@ const el = {};
 
 document.addEventListener("DOMContentLoaded", () => {
   bindElements();
+  if (!hasRequiredElements()) return;
   loadSession();
   bindEvents();
   loadCards();
@@ -77,6 +78,20 @@ function bindElements() {
   ]) {
     el[id] = document.getElementById(id);
   }
+}
+
+function hasRequiredElements() {
+  const missing = Object.entries(el)
+    .filter(([, node]) => !node)
+    .map(([id]) => id);
+  if (!missing.length) return true;
+  const message = `Frontend files are out of sync. Missing DOM ids: ${missing.join(", ")}. Refresh the page or redeploy the whole frontend/web folder.`;
+  console.error(message);
+  const fallback = document.createElement("div");
+  fallback.style.cssText = "margin:16px;padding:12px;border:1px solid #f06f7d;color:#ffd0d5;background:#171a20;font:14px system-ui";
+  fallback.textContent = message;
+  document.body.prepend(fallback);
+  return false;
 }
 
 function bindEvents() {
