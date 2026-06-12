@@ -139,10 +139,13 @@ h2 {
   padding: 12px;
 }
 
-.brand-block img {
+.brand-block > .brand-logo {
   width: 52px;
   height: 52px;
+  max-width: 52px;
+  max-height: 52px;
   object-fit: contain;
+  display: block;
 }
 
 .brand-block p,
@@ -527,12 +530,22 @@ h2 {
   padding: 11px;
 }
 
-.preview-panel img {
-  width: 100%;
+.preview-panel > .preview-card-art {
+  width: min(100%, 220px);
+  max-width: 220px;
+  max-height: 308px;
   aspect-ratio: 5 / 7;
   border-radius: 7px;
   object-fit: contain;
   background: #090b0e;
+  justify-self: center;
+  display: block;
+}
+
+.preview-panel > .preview-card-art.is-placeholder {
+  width: 120px;
+  max-width: 120px;
+  max-height: 168px;
 }
 
 .preview-panel h2 {

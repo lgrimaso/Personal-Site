@@ -558,6 +558,7 @@ function renderPreview() {
   const name = state.previewName || selected?.name || "";
   if (!name) {
     el.previewImage.src = artPath("Card Back");
+    el.previewImage.classList.add("is-placeholder");
     el.previewName.textContent = "Inspect";
     el.previewMeta.textContent = "Hover or focus a card";
     el.previewText.textContent = "";
@@ -565,6 +566,7 @@ function renderPreview() {
   }
   const definition = state.cards.get(name);
   el.previewImage.src = artPath(name);
+  el.previewImage.classList.remove("is-placeholder");
   el.previewName.textContent = name;
   el.previewMeta.textContent = definition ? `${definition.card_type} · ${definition.magnifiers} investigation` : "";
   el.previewText.textContent = definition?.text || "";
