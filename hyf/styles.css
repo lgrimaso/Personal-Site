@@ -93,20 +93,18 @@ h2 {
 .game-shell {
   height: 100vh;
   display: grid;
-  grid-template-columns: 220px minmax(720px, 1fr) 260px;
+  grid-template-columns: 260px minmax(760px, 1fr);
   gap: 10px;
   padding: 10px;
 }
 
 .lobby-rail,
-.control-rail,
 .tabletop {
   min-height: 0;
   min-width: 0;
 }
 
-.lobby-rail,
-.control-rail {
+.lobby-rail {
   display: grid;
   align-content: start;
   gap: 10px;
@@ -114,7 +112,7 @@ h2 {
 
 .tabletop {
   display: grid;
-  grid-template-rows: 156px 54px minmax(226px, 1fr) 104px 176px;
+  grid-template-rows: 188px 48px minmax(150px, 0.8fr) 144px 224px;
   gap: 10px;
 }
 
@@ -123,7 +121,6 @@ h2 {
 .players-band,
 .zone,
 .datajack-card,
-.preview-panel,
 .control-panel,
 .choice-panel {
   border: 1px solid var(--line);
@@ -150,8 +147,7 @@ h2 {
 
 .brand-block p,
 .panel-title span,
-.zone-title span,
-.preview-panel p {
+.zone-title span {
   color: var(--muted);
 }
 
@@ -161,6 +157,10 @@ h2 {
   display: grid;
   gap: 10px;
   padding: 11px;
+}
+
+.control-panel {
+  align-content: start;
 }
 
 .connection-row,
@@ -212,10 +212,6 @@ h2 {
   color: var(--muted);
 }
 
-.event-panel {
-  min-height: 0;
-}
-
 .event-log {
   display: grid;
   gap: 6px;
@@ -241,7 +237,7 @@ h2 {
   padding: 10px;
   display: grid;
   grid-template-rows: auto 1fr;
-  gap: 8px;
+  gap: 10px;
 }
 
 .player-seats {
@@ -255,13 +251,13 @@ h2 {
 .player-seat {
   position: relative;
   display: grid;
-  grid-template-rows: auto auto auto minmax(28px, 1fr);
-  gap: 5px;
+  grid-template-rows: auto auto auto minmax(54px, 1fr);
+  gap: 6px;
   align-content: start;
   border: 1px solid var(--line-soft);
   border-radius: 7px;
   background: #10141a;
-  padding: 8px 8px 7px;
+  padding: 10px 8px 8px;
   overflow: visible;
   min-height: 0;
 }
@@ -344,13 +340,13 @@ h2 {
   flex-wrap: wrap;
   align-content: flex-start;
   gap: 4px;
-  min-height: 28px;
+  min-height: 54px;
   overflow: visible;
 }
 
 .hardware-token {
-  width: 22px;
-  height: 31px;
+  width: 28px;
+  height: 39px;
   border: 1px solid var(--line);
   border-radius: 4px;
   padding: 0;
@@ -421,7 +417,8 @@ h2 {
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  padding: 4px 2px 8px;
+  overflow-y: visible;
+  padding: 4px 2px 12px;
 }
 
 .game-card {
@@ -438,8 +435,8 @@ h2 {
 }
 
 .hand-cards .game-card {
-  flex-basis: 120px;
-  min-height: 170px;
+  flex-basis: 128px;
+  min-height: 190px;
 }
 
 .game-card img {
@@ -493,9 +490,9 @@ h2 {
 }
 
 .stack-item {
-  flex: 0 0 184px;
+  flex: 0 0 210px;
   display: grid;
-  grid-template-columns: 44px 1fr;
+  grid-template-columns: 58px 1fr;
   gap: 8px;
   align-items: center;
   border: 1px solid var(--line);
@@ -511,8 +508,8 @@ h2 {
 }
 
 .stack-item img {
-  width: 44px;
-  height: 62px;
+  width: 58px;
+  height: 82px;
   border-radius: 4px;
   object-fit: cover;
 }
@@ -525,42 +522,6 @@ h2 {
 .stack-item span {
   color: var(--muted);
   font-size: 0.75rem;
-}
-
-.preview-panel {
-  min-height: 370px;
-  display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 10px;
-  padding: 11px;
-}
-
-.preview-panel > .preview-card-art {
-  width: min(100%, 220px);
-  max-width: 220px;
-  max-height: 308px;
-  aspect-ratio: 5 / 7;
-  border-radius: 7px;
-  object-fit: contain;
-  background: #090b0e;
-  justify-self: center;
-  display: block;
-}
-
-.preview-panel > .preview-card-art.is-placeholder {
-  width: 120px;
-  max-width: 120px;
-  max-height: 168px;
-}
-
-.preview-panel h2 {
-  font-size: 1rem;
-}
-
-.preview-panel p {
-  margin-top: 6px;
-  font-size: 0.84rem;
-  line-height: 1.35;
 }
 
 .floating-preview {

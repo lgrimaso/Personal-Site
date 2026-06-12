@@ -8,19 +8,18 @@
       .game-shell {
         min-height: 100vh;
         display: grid;
-        grid-template-columns: 220px minmax(720px, 1fr) 260px;
+        grid-template-columns: 260px minmax(760px, 1fr);
         gap: 10px;
         padding: 10px;
       }
       .tabletop {
         display: grid;
-        grid-template-rows: 156px 54px minmax(226px, 1fr) 104px 176px;
+        grid-template-rows: 188px 48px minmax(150px, 0.8fr) 144px 224px;
         gap: 10px;
         min-width: 0;
         min-height: 0;
       }
-      .lobby-rail,
-      .control-rail {
+      .lobby-rail {
         display: grid;
         align-content: start;
         gap: 10px;
@@ -40,7 +39,7 @@
         max-height: 168px;
       }
     </style>
-    <link rel="stylesheet" href="./styles.css?v=20260612-3" />
+    <link rel="stylesheet" href="./styles.css?v=20260612-4" />
   </head>
   <body>
     <div class="game-shell">
@@ -82,13 +81,37 @@
           </div>
         </section>
 
-        <section class="rail-panel event-panel">
+        <section class="control-panel">
           <div class="panel-title">
-            <h2>Log</h2>
-            <button id="clearLogButton" class="ghost-button" type="button">Clear</button>
+            <h2>Controls</h2>
           </div>
-          <div id="eventLog" class="event-log"></div>
+          <div id="selectionSummary" class="selection-summary">No card selected</div>
+          <div id="contextTools" class="context-tools"></div>
+          <div class="button-grid">
+            <button id="playCardButton" type="button">Play</button>
+            <button id="discardCardButton" type="button">Discard</button>
+            <button id="startHackButton" type="button">Start Hack</button>
+            <button id="passPriorityButton" type="button">Pass</button>
+          </div>
+          <div class="lay-low-row">
+            <select id="layLowAmount">
+              <option value="1">Lay Low 1</option>
+              <option value="2">Lay Low 2</option>
+            </select>
+            <button id="layLowButton" type="button">Lay Low</button>
+          </div>
         </section>
+
+        <section class="choice-panel hidden" id="choicePanel">
+          <div class="panel-title">
+            <h2>Choice</h2>
+          </div>
+          <p id="choicePrompt"></p>
+          <div id="choiceActions" class="choice-actions"></div>
+        </section>
+
+        <button id="clearLogButton" class="hidden" type="button">Clear</button>
+        <div id="eventLog" class="hidden"></div>
       </aside>
 
       <main class="tabletop">
@@ -136,45 +159,12 @@
         </section>
       </main>
 
-      <aside class="control-rail">
-        <section class="preview-panel">
-          <img id="previewImage" class="preview-card-art is-placeholder" src="./CardArt/Card Back.png" alt="" width="120" height="168" />
-          <div>
-            <h2 id="previewName">Inspect</h2>
-            <p id="previewMeta">Hover or focus a card</p>
-            <p id="previewText"></p>
-          </div>
-        </section>
-
-        <section class="control-panel">
-          <div class="panel-title">
-            <h2>Controls</h2>
-          </div>
-          <div id="selectionSummary" class="selection-summary">No card selected</div>
-          <div id="contextTools" class="context-tools"></div>
-          <div class="button-grid">
-            <button id="playCardButton" type="button">Play</button>
-            <button id="discardCardButton" type="button">Discard</button>
-            <button id="startHackButton" type="button">Start Hack</button>
-            <button id="passPriorityButton" type="button">Pass</button>
-          </div>
-          <div class="lay-low-row">
-            <select id="layLowAmount">
-              <option value="1">Lay Low 1</option>
-              <option value="2">Lay Low 2</option>
-            </select>
-            <button id="layLowButton" type="button">Lay Low</button>
-          </div>
-        </section>
-
-        <section class="choice-panel hidden" id="choicePanel">
-          <div class="panel-title">
-            <h2>Choice</h2>
-          </div>
-          <p id="choicePrompt"></p>
-          <div id="choiceActions" class="choice-actions"></div>
-        </section>
-      </aside>
+      <div class="hidden">
+        <img id="previewImage" src="./CardArt/Card Back.png" alt="" />
+        <h2 id="previewName"></h2>
+        <p id="previewMeta"></p>
+        <p id="previewText"></p>
+      </div>
     </div>
 
     <template id="cardTemplate">
@@ -188,6 +178,6 @@
       <img id="floatingPreviewImage" alt="" />
     </div>
 
-    <script src="./app.js?v=20260612-3"></script>
+    <script src="./app.js?v=20260612-4"></script>
   </body>
 </html>
