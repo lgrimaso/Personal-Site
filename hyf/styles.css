@@ -563,6 +563,27 @@ h2 {
   line-height: 1.35;
 }
 
+.floating-preview {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+  width: 280px;
+  max-width: 24vw;
+  border: 1px solid rgba(139, 183, 255, 0.5);
+  border-radius: 9px;
+  background: #07090c;
+  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.55);
+  padding: 8px;
+}
+
+.floating-preview img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  border-radius: 6px;
+  object-fit: contain;
+}
+
 .selection-summary,
 .context-tools {
   min-height: 38px;

@@ -75,6 +75,8 @@ function bindElements() {
     "choicePrompt",
     "choiceActions",
     "cardTemplate",
+    "floatingPreview",
+    "floatingPreviewImage",
   ]) {
     el[id] = document.getElementById(id);
   }
@@ -380,8 +382,7 @@ function renderPlayers() {
       if (hardwareTargets.has(hardware.id)) token.classList.add("is-target");
       token.title = hardware.name;
       token.innerHTML = `<img src="${artPath(hardware.name)}" alt="">`;
-      token.addEventListener("mouseenter", () => showPreview(hardware.name));
-      token.addEventListener("focus", () => showPreview(hardware.name));
+      wireCardPreview(token, hardware.name);
       token.addEventListener("click", (event) => {
         event.stopPropagation();
         handleHardwareTarget(player.id, hardware.id);
@@ -452,8 +453,7 @@ function renderStack() {
         <span>${escapeHtml(playerName(item.actor_id) || item.actor_id)}${item.canceled ? " · canceled" : ""}</span>
       </div>
     `;
-    row.addEventListener("mouseenter", () => showPreview(name));
-    row.addEventListener("focus", () => showPreview(name));
+    wireCardPreview(row, name);
     row.addEventListener("click", () => handleStackTarget(item.id));
     el.stackList.append(row);
   });
@@ -557,8 +557,7 @@ function renderChoice() {
   if (choice.kind === "cloud_storage") {
     for (const card of choice.valid_cards || []) {
       const button = toolButton(card.name, () => submitAction({ type: "answer_choice", answer: "choose_card", card_id: card.id }));
-      button.addEventListener("mouseenter", () => showPreview(card.name));
-      button.addEventListener("focus", () => showPreview(card.name));
+      wireCardPreview(button, card.name);
       el.choiceActions.append(button);
     }
   } else {
@@ -593,9 +592,22 @@ function cardNode(card, options = {}) {
   node.querySelector("img").src = artPath(card.name);
   node.querySelector("img").alt = card.name;
   node.querySelector("span").textContent = options.label || card.name;
-  node.addEventListener("mouseenter", () => showPreview(card.name));
-  node.addEventListener("focus", () => showPreview(card.name));
+  wireCardPreview(node, card.name);
   return node;
+}
+
+function wireCardPreview(node, cardName) {
+  node.addEventListener("mouseenter", (event) => {
+    showPreview(cardName);
+    showFloatingPreview(cardName, event);
+  });
+  node.addEventListener("mousemove", moveFloatingPreview);
+  node.addEventListener("mouseleave", hideFloatingPreview);
+  node.addEventListener("focus", (event) => {
+    showPreview(cardName);
+    showFloatingPreview(cardName, event);
+  });
+  node.addEventListener("blur", hideFloatingPreview);
 }
 
 function toggleHandSelection(cardId) {
@@ -726,6 +738,36 @@ function pruneSelection() {
 function showPreview(cardName) {
   state.previewName = cardName;
   renderPreview();
+}
+
+function showFloatingPreview(cardName, event) {
+  if (!el.floatingPreview || !el.floatingPreviewImage) return;
+  el.floatingPreviewImage.src = artPath(cardName);
+  el.floatingPreviewImage.alt = cardName;
+  el.floatingPreview.classList.remove("hidden");
+  moveFloatingPreview(event);
+}
+
+function moveFloatingPreview(event) {
+  if (!el.floatingPreview || el.floatingPreview.classList.contains("hidden")) return;
+  const pointerX = event.clientX || window.innerWidth / 2;
+  const pointerY = event.clientY || window.innerHeight / 2;
+  const rect = el.floatingPreview.getBoundingClientRect();
+  const gap = 18;
+  let left = pointerX + gap;
+  let top = pointerY + gap;
+  if (left + rect.width > window.innerWidth - 8) {
+    left = pointerX - rect.width - gap;
+  }
+  if (top + rect.height > window.innerHeight - 8) {
+    top = pointerY - rect.height - gap;
+  }
+  el.floatingPreview.style.left = `${Math.max(8, left)}px`;
+  el.floatingPreview.style.top = `${Math.max(8, top)}px`;
+}
+
+function hideFloatingPreview() {
+  el.floatingPreview?.classList.add("hidden");
 }
 
 function playerName(playerId) {
