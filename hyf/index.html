@@ -7,150 +7,142 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div class="app-shell">
-      <header class="topbar">
-        <div class="brand">
+    <div class="game-shell">
+      <aside class="lobby-rail">
+        <div class="brand-block">
           <img src="./CardArt/Datajack.png" alt="" />
-          <div>
-            <h1>Hack Your Friends</h1>
-            <p id="sessionLine">No room connected</p>
-          </div>
+          <h1>Hack Your Friends</h1>
+          <p id="sessionLine">No room</p>
         </div>
-        <div class="connection-strip">
+
+        <section class="rail-panel">
           <label>
             API
             <input id="apiBaseInput" type="url" autocomplete="off" spellcheck="false" />
           </label>
-          <span id="connectionStatus" class="status-pill status-offline">offline</span>
-        </div>
-      </header>
-
-      <main class="layout">
-        <section class="left-rail">
-          <section class="panel" id="lobbyPanel">
-            <div class="panel-heading">
-              <h2>Lobby</h2>
-            </div>
-            <div class="field-stack">
-              <label>
-                Nickname
-                <input id="nicknameInput" type="text" maxlength="32" autocomplete="nickname" />
-              </label>
-              <label>
-                Room Code
-                <input id="roomCodeInput" type="text" maxlength="8" autocomplete="off" spellcheck="false" />
-              </label>
-              <label>
-                Starting Servers
-                <input id="serversInput" type="number" min="1" max="10" value="3" />
-              </label>
-            </div>
-            <div class="button-grid">
-              <button id="createLobbyButton" type="button">Create</button>
-              <button id="joinLobbyButton" type="button">Join</button>
-              <button id="startGameButton" type="button">Start</button>
-              <button id="reconnectButton" type="button">Reconnect</button>
-            </div>
-          </section>
-
-          <section class="panel">
-            <div class="panel-heading">
-              <h2>Players</h2>
-            </div>
-            <div id="playersList" class="players-list"></div>
-          </section>
+          <div class="connection-row">
+            <span id="connectionStatus" class="status-pill status-offline">offline</span>
+            <button id="reconnectButton" type="button">Reconnect</button>
+          </div>
         </section>
 
-        <section class="board">
-          <section class="table-band">
-            <div class="table-meta">
-              <div>
-                <span class="kicker">Deck</span>
-                <strong id="deckCount">0</strong>
-              </div>
-              <div>
-                <span class="kicker">Discard</span>
-                <strong id="discardCount">0</strong>
-              </div>
-              <div>
-                <span class="kicker">Priority</span>
-                <strong id="priorityPlayer">-</strong>
-              </div>
-            </div>
-            <div id="winnerBanner" class="winner-banner hidden"></div>
-          </section>
-
-          <section class="zone">
-            <div class="zone-heading">
-              <h2>The Web</h2>
-              <span id="webCount">0 / 24</span>
-            </div>
-            <div id="webCards" class="card-row web-row"></div>
-          </section>
-
-          <section class="zone stack-zone">
-            <div class="zone-heading">
-              <h2>Stack</h2>
-              <span id="stackCount">0</span>
-            </div>
-            <div id="stackList" class="stack-list"></div>
-          </section>
-
-          <section class="zone">
-            <div class="zone-heading">
-              <h2>Your Hand</h2>
-              <span id="handCount">0</span>
-            </div>
-            <div id="handCards" class="card-row hand-row"></div>
-          </section>
+        <section class="rail-panel">
+          <label>
+            Nickname
+            <input id="nicknameInput" type="text" maxlength="32" autocomplete="nickname" />
+          </label>
+          <label>
+            Room
+            <input id="roomCodeInput" type="text" maxlength="8" autocomplete="off" spellcheck="false" />
+          </label>
+          <label>
+            Servers
+            <input id="serversInput" type="number" min="1" max="10" value="3" />
+          </label>
+          <div class="button-grid">
+            <button id="createLobbyButton" type="button">Create</button>
+            <button id="joinLobbyButton" type="button">Join</button>
+            <button id="startGameButton" type="button">Start</button>
+          </div>
         </section>
 
-        <aside class="right-rail">
-          <section class="panel action-panel">
-            <div class="panel-heading">
-              <h2>Actions</h2>
-            </div>
-            <div id="selectionSummary" class="selection-summary">No card selected</div>
-            <div id="dynamicInputs" class="field-stack"></div>
-            <div class="button-grid">
-              <button id="playCardButton" type="button">Play</button>
-              <button id="discardCardButton" type="button">Discard</button>
-              <button id="startHackButton" type="button">Start Hack</button>
-              <button id="passPriorityButton" type="button">Pass</button>
-            </div>
-            <div class="lay-low-row">
-              <label>
-                Lay Low
-                <select id="layLowAmount">
-                  <option value="1">1 investigation</option>
-                  <option value="2">2 investigations</option>
-                </select>
-              </label>
-              <button id="layLowButton" type="button">Lay Low</button>
-            </div>
-          </section>
+        <section class="rail-panel event-panel">
+          <div class="panel-title">
+            <h2>Log</h2>
+            <button id="clearLogButton" class="ghost-button" type="button">Clear</button>
+          </div>
+          <div id="eventLog" class="event-log"></div>
+        </section>
+      </aside>
 
-          <section class="panel choice-panel hidden" id="choicePanel">
-            <div class="panel-heading">
-              <h2>Choice</h2>
-            </div>
-            <p id="choicePrompt"></p>
-            <div id="choiceActions" class="button-grid"></div>
-          </section>
+      <main class="tabletop">
+        <section class="players-band">
+          <div class="panel-title">
+            <h2>Players</h2>
+            <span id="turnSummary"></span>
+          </div>
+          <div id="playerSeats" class="player-seats"></div>
+        </section>
 
-          <section class="panel">
-            <div class="panel-heading">
-              <h2>Event Log</h2>
-              <button id="clearLogButton" class="ghost-button" type="button">Clear</button>
-            </div>
-            <div id="eventLog" class="event-log"></div>
-          </section>
-        </aside>
+        <section class="datajack-band">
+          <div class="datajack-card current">
+            <span>Current Datajack</span>
+            <strong id="currentDatajack">-</strong>
+          </div>
+          <div class="datajack-card future">
+            <span>Future Datajack</span>
+            <strong id="futureDatajack">-</strong>
+          </div>
+        </section>
+
+        <section class="web-zone zone">
+          <div class="zone-title">
+            <h2>The Web</h2>
+            <span id="webCount">0 / 24</span>
+          </div>
+          <div id="webCards" class="web-cards"></div>
+        </section>
+
+        <section class="stack-zone zone">
+          <div class="zone-title">
+            <h2>The Stack</h2>
+            <span id="stackCount">0</span>
+          </div>
+          <div id="stackList" class="stack-list"></div>
+        </section>
+
+        <section class="hand-zone zone">
+          <div class="zone-title">
+            <h2>Hand</h2>
+            <span id="handCount">0</span>
+          </div>
+          <div id="handCards" class="hand-cards"></div>
+        </section>
       </main>
+
+      <aside class="control-rail">
+        <section class="preview-panel">
+          <img id="previewImage" src="./CardArt/Card Back.png" alt="" />
+          <div>
+            <h2 id="previewName">Inspect</h2>
+            <p id="previewMeta">Hover or focus a card</p>
+            <p id="previewText"></p>
+          </div>
+        </section>
+
+        <section class="control-panel">
+          <div class="panel-title">
+            <h2>Controls</h2>
+          </div>
+          <div id="selectionSummary" class="selection-summary">No card selected</div>
+          <div id="contextTools" class="context-tools"></div>
+          <div class="button-grid">
+            <button id="playCardButton" type="button">Play</button>
+            <button id="discardCardButton" type="button">Discard</button>
+            <button id="startHackButton" type="button">Start Hack</button>
+            <button id="passPriorityButton" type="button">Pass</button>
+          </div>
+          <div class="lay-low-row">
+            <select id="layLowAmount">
+              <option value="1">Lay Low 1</option>
+              <option value="2">Lay Low 2</option>
+            </select>
+            <button id="layLowButton" type="button">Lay Low</button>
+          </div>
+        </section>
+
+        <section class="choice-panel hidden" id="choicePanel">
+          <div class="panel-title">
+            <h2>Choice</h2>
+          </div>
+          <p id="choicePrompt"></p>
+          <div id="choiceActions" class="choice-actions"></div>
+        </section>
+      </aside>
     </div>
 
     <template id="cardTemplate">
-      <button class="card-button" type="button">
+      <button class="game-card" type="button">
         <img alt="" />
         <span></span>
       </button>

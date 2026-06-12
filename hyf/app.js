@@ -16,7 +16,10 @@ const state = {
   publicState: null,
   privateState: null,
   cards: new Map(),
-  selectedCardIds: new Set(),
+  selectedHandIds: new Set(),
+  rewriteFirstId: "",
+  quantumOrder: [],
+  previewName: "",
   socket: null,
 };
 
@@ -28,9 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
   bindEvents();
   loadCards();
   render();
-  if (state.roomCode && state.playerToken) {
-    reconnect();
-  }
+  if (state.roomCode && state.playerToken) reconnect();
 });
 
 function bindElements() {
@@ -38,26 +39,31 @@ function bindElements() {
     "apiBaseInput",
     "connectionStatus",
     "sessionLine",
+    "reconnectButton",
     "nicknameInput",
     "roomCodeInput",
     "serversInput",
     "createLobbyButton",
     "joinLobbyButton",
     "startGameButton",
-    "reconnectButton",
-    "playersList",
-    "deckCount",
-    "discardCount",
-    "priorityPlayer",
-    "winnerBanner",
+    "clearLogButton",
+    "eventLog",
+    "turnSummary",
+    "playerSeats",
+    "currentDatajack",
+    "futureDatajack",
     "webCount",
     "webCards",
     "stackCount",
     "stackList",
     "handCount",
     "handCards",
+    "previewImage",
+    "previewName",
+    "previewMeta",
+    "previewText",
     "selectionSummary",
-    "dynamicInputs",
+    "contextTools",
     "playCardButton",
     "discardCardButton",
     "startHackButton",
@@ -67,8 +73,6 @@ function bindElements() {
     "choicePanel",
     "choicePrompt",
     "choiceActions",
-    "eventLog",
-    "clearLogButton",
     "cardTemplate",
   ]) {
     el[id] = document.getElementById(id);
@@ -84,14 +88,12 @@ function bindEvents() {
   el.joinLobbyButton.addEventListener("click", joinLobby);
   el.startGameButton.addEventListener("click", startGame);
   el.reconnectButton.addEventListener("click", reconnect);
-  el.playCardButton.addEventListener("click", playSelectedCard);
+  el.clearLogButton.addEventListener("click", () => (el.eventLog.innerHTML = ""));
+  el.playCardButton.addEventListener("click", playSelectedNoTargetCard);
   el.discardCardButton.addEventListener("click", discardSelectedCard);
   el.startHackButton.addEventListener("click", startHackByDiscard);
   el.passPriorityButton.addEventListener("click", () => submitAction({ type: "pass_priority" }));
   el.layLowButton.addEventListener("click", () => submitAction({ type: "lay_low", amount: Number(el.layLowAmount.value) }));
-  el.clearLogButton.addEventListener("click", () => {
-    el.eventLog.innerHTML = "";
-  });
 }
 
 function loadSession() {
@@ -134,10 +136,7 @@ async function createLobby() {
   try {
     const nickname = el.nicknameInput.value.trim() || "Player";
     const starting_servers = Number(el.serversInput.value || 3);
-    const data = await request("/lobbies", {
-      method: "POST",
-      body: { nickname, starting_servers },
-    });
+    const data = await request("/lobbies", { method: "POST", body: { nickname, starting_servers } });
     applyCredentials(data, true);
     connectSocket();
     log(`Created room ${state.roomCode}`);
@@ -150,10 +149,7 @@ async function joinLobby() {
   try {
     const nickname = el.nicknameInput.value.trim() || "Player";
     const roomCode = el.roomCodeInput.value.trim().toUpperCase();
-    const data = await request(`/lobbies/${roomCode}/join`, {
-      method: "POST",
-      body: { nickname },
-    });
+    const data = await request(`/lobbies/${roomCode}/join`, { method: "POST", body: { nickname } });
     applyCredentials(data, false);
     connectSocket();
     log(`Joined room ${state.roomCode}`);
@@ -164,10 +160,7 @@ async function joinLobby() {
 
 async function startGame() {
   try {
-    await request(`/lobbies/${state.roomCode}/start`, {
-      method: "POST",
-      auth: true,
-    });
+    await request(`/lobbies/${state.roomCode}/start`, { method: "POST", auth: true });
     log("Start requested");
   } catch (error) {
     logError(error.message);
@@ -176,12 +169,11 @@ async function startGame() {
 
 async function reconnect() {
   try {
-    if (!state.roomCode || !state.playerToken) {
-      throw new Error("No saved room token");
-    }
+    if (!state.roomCode || !state.playerToken) throw new Error("No saved room token");
     const privateState = await request(`/lobbies/${state.roomCode}/me`, { auth: true });
     state.privateState = privateState;
     state.publicState = privateState;
+    pruneSelection();
     connectSocket();
     log(`Reconnected to ${state.roomCode}`);
     render();
@@ -205,9 +197,7 @@ function applyCredentials(data, isHost) {
 
 function connectSocket() {
   if (!state.roomCode || !state.playerToken) return;
-  if (state.socket) {
-    state.socket.close();
-  }
+  if (state.socket) state.socket.close();
   const wsUrl = `${state.apiBase.replace(/^http/, "ws")}/lobbies/${state.roomCode}/ws?player_token=${encodeURIComponent(state.playerToken)}`;
   setConnection("waiting");
   const socket = new WebSocket(wsUrl);
@@ -224,8 +214,7 @@ function connectSocket() {
     logError("WebSocket error");
   });
   socket.addEventListener("message", (event) => {
-    const message = JSON.parse(event.data);
-    handleSocketMessage(message);
+    handleSocketMessage(JSON.parse(event.data));
   });
 }
 
@@ -235,6 +224,7 @@ function handleSocketMessage(message) {
   } else if (message.type === "private.updated") {
     state.privateState = message.data;
     state.publicState = message.data;
+    pruneSelection();
   } else if (message.type === "priority.required") {
     log("Priority required");
   } else if (message.type === "choice.required") {
@@ -249,9 +239,7 @@ function handleSocketMessage(message) {
 
 async function request(path, options = {}) {
   const headers = { "Content-Type": "application/json" };
-  if (options.auth) {
-    headers.Authorization = `Bearer ${state.playerToken}`;
-  }
+  if (options.auth) headers.Authorization = `Bearer ${state.playerToken}`;
   const response = await fetch(`${state.apiBase}${path}`, {
     method: options.method || "GET",
     headers,
@@ -272,12 +260,10 @@ async function request(path, options = {}) {
 
 async function submitAction(action) {
   try {
-    await request(`/lobbies/${state.roomCode}/actions`, {
-      method: "POST",
-      auth: true,
-      body: action,
-    });
-    state.selectedCardIds.clear();
+    await request(`/lobbies/${state.roomCode}/actions`, { method: "POST", auth: true, body: action });
+    state.selectedHandIds.clear();
+    state.rewriteFirstId = "";
+    state.quantumOrder = [];
     log(`Submitted ${action.type}`);
     await refreshPrivateState();
   } catch (error) {
@@ -291,26 +277,383 @@ async function refreshPrivateState() {
     const privateState = await request(`/lobbies/${state.roomCode}/me`, { auth: true });
     state.privateState = privateState;
     state.publicState = privateState;
+    pruneSelection();
     render();
   } catch (error) {
     logError(error.message);
   }
 }
 
-function playSelectedCard() {
+function render() {
+  renderSession();
+  renderPlayers();
+  renderDatajack();
+  renderWeb();
+  renderStack();
+  renderHand();
+  renderControls();
+  renderChoice();
+  renderPreview();
+}
+
+function renderSession() {
+  const room = state.publicState;
+  el.sessionLine.textContent = state.roomCode ? `Room ${state.roomCode} · ${room?.status || "saved"}` : "No room";
+  el.startGameButton.disabled = !state.roomCode;
+  el.reconnectButton.disabled = !state.roomCode || !state.playerToken;
+  const activeName = playerName(room?.game?.active_player_id);
+  const priorityName = playerName(room?.game?.current_priority_player_id);
+  el.turnSummary.textContent = priorityName ? `Priority: ${priorityName}` : activeName ? `Turn: ${activeName}` : "";
+}
+
+function renderPlayers() {
+  const room = state.publicState;
+  const selected = selectedCard();
+  const hint = selected ? cardHint(selected.id) : null;
+  const playerTargets = new Set(hint?.valid_targets?.players || []);
+  const hardwareTargets = new Set((hint?.valid_targets?.hardware || []).map((target) => target.card_id));
+  const futureId = activeProjection()?.landing_player_id;
+
+  el.playerSeats.innerHTML = "";
+  if (!room?.players?.length) {
+    el.playerSeats.append(empty("No players"));
+    return;
+  }
+
+  for (const player of room.players) {
+    const seat = document.createElement("div");
+    seat.role = "button";
+    seat.tabIndex = 0;
+    seat.className = "player-seat";
+    if (player.id === state.playerId) seat.classList.add("is-me");
+    if (room.game?.datajack_player_id === player.id) seat.classList.add("is-current-datajack");
+    if (futureId === player.id) seat.classList.add("is-future-datajack");
+    if (playerTargets.has(player.id)) seat.classList.add("is-target");
+    seat.addEventListener("click", () => handlePlayerTarget(player.id));
+    seat.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        handlePlayerTarget(player.id);
+      }
+    });
+
+    seat.innerHTML = `
+      <div class="seat-name">
+        <span>${escapeHtml(player.nickname)}</span>
+        <span>${player.id === state.playerId ? "you" : ""}</span>
+      </div>
+      <div class="seat-badges"></div>
+      <div class="seat-stats">
+        <span class="chip">S ${player.servers}</span>
+        <span class="chip">I ${player.investigations}</span>
+        <span class="chip">H ${player.hand_count}</span>
+      </div>
+      <div class="hardware-strip"></div>
+    `;
+
+    const badges = seat.querySelector(".seat-badges");
+    if (room.game?.active_player_id === player.id) badges.append(chip("active", "active"));
+    if (room.game?.datajack_player_id === player.id) badges.append(chip("datajack", "current"));
+    if (futureId === player.id) badges.append(chip("future", "future"));
+    if (!player.alive) badges.append(chip("out", ""));
+
+    const hardwareStrip = seat.querySelector(".hardware-strip");
+    for (const hardware of player.hardware || []) {
+      const token = document.createElement("button");
+      token.type = "button";
+      token.className = "hardware-token";
+      if (hardwareTargets.has(hardware.id)) token.classList.add("is-target");
+      token.title = hardware.name;
+      token.innerHTML = `<img src="${artPath(hardware.name)}" alt="">`;
+      token.addEventListener("mouseenter", () => showPreview(hardware.name));
+      token.addEventListener("focus", () => showPreview(hardware.name));
+      token.addEventListener("click", (event) => {
+        event.stopPropagation();
+        handleHardwareTarget(player.id, hardware.id);
+      });
+      hardwareStrip.append(token);
+    }
+
+    el.playerSeats.append(seat);
+  }
+}
+
+function renderDatajack() {
+  const game = state.publicState?.game;
+  const projection = activeProjection();
+  el.currentDatajack.textContent = playerName(game?.datajack_player_id) || "-";
+  const futureName = playerName(projection?.landing_player_id) || "-";
+  el.futureDatajack.textContent = projection?.uncertain ? `${futureName} ?` : futureName;
+  el.futureDatajack.title = projection?.reasons?.join("; ") || "";
+}
+
+function renderWeb() {
+  const web = state.publicState?.game?.web || [];
+  const selected = selectedCard();
+  const hint = selected ? cardHint(selected.id) : null;
+  const validWebIds = new Set((hint?.valid_targets?.web_cards || []).map((target) => target.id));
+  el.webCount.textContent = `${web.length} / 24`;
+  el.webCards.innerHTML = "";
+  if (!web.length) {
+    el.webCards.append(empty("The Web is empty"));
+    return;
+  }
+  web.forEach((card, index) => {
+    const node = cardNode(card, { label: `${index}: ${card.name}` });
+    if (isWebTarget(card.id, validWebIds)) node.classList.add("is-target");
+    if (state.rewriteFirstId === card.id || state.quantumOrder.includes(card.id)) {
+      node.classList.add("is-picked");
+      const badge = document.createElement("span");
+      badge.className = "order-badge";
+      badge.textContent = state.quantumOrder.includes(card.id) ? String(state.quantumOrder.indexOf(card.id) + 1) : "1";
+      node.append(badge);
+    }
+    node.addEventListener("click", () => handleWebTarget(card.id));
+    el.webCards.append(node);
+  });
+}
+
+function renderStack() {
+  const stack = state.publicState?.game?.stack || [];
+  const selected = selectedCard();
+  const hint = selected ? cardHint(selected.id) : null;
+  const stackTargets = new Set(hint?.valid_targets?.stack_items || []);
+  el.stackCount.textContent = stack.length;
+  el.stackList.innerHTML = "";
+  if (!stack.length) {
+    el.stackList.append(empty("Stack empty"));
+    return;
+  }
+  [...stack].reverse().forEach((item, index) => {
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = "stack-item";
+    if (stackTargets.has(item.id)) row.classList.add("is-target");
+    const name = item.card?.name || item.action_type;
+    row.innerHTML = `
+      <img src="${artPath(name)}" alt="">
+      <div>
+        <strong>${escapeHtml(name)}${index === 0 ? " · top" : ""}</strong>
+        <span>${escapeHtml(playerName(item.actor_id) || item.actor_id)}${item.canceled ? " · canceled" : ""}</span>
+      </div>
+    `;
+    row.addEventListener("mouseenter", () => showPreview(name));
+    row.addEventListener("focus", () => showPreview(name));
+    row.addEventListener("click", () => handleStackTarget(item.id));
+    el.stackList.append(row);
+  });
+}
+
+function renderHand() {
+  const hand = state.privateState?.me?.hand || [];
+  el.handCount.textContent = hand.length;
+  el.handCards.innerHTML = "";
+  if (!hand.length) {
+    el.handCards.append(empty("No cards"));
+    return;
+  }
+  for (const card of hand) {
+    const hint = cardHint(card.id);
+    const node = cardNode(card);
+    if (state.selectedHandIds.has(card.id)) node.classList.add("is-selected");
+    if (hint && !hint.playable) {
+      node.classList.add("is-unplayable");
+      node.title = hint.reason || "Not playable";
+    }
+    node.addEventListener("click", () => toggleHandSelection(card.id));
+    el.handCards.append(node);
+  }
+}
+
+function renderControls() {
+  const legal = new Set(state.privateState?.legal_actions || []);
   const selected = selectedHandCards();
-  if (selected.length !== 1) return;
-  const card = selected[0];
-  const action = { type: "play_card", card_id: card.id };
-  const payload = buildPayloadForCard(card);
-  if (Object.keys(payload).length) {
-    action.payload = payload;
+  const active = selectedCard();
+  const hint = active ? cardHint(active.id) : null;
+  const me = state.privateState?.me;
+
+  if (!selected.length) {
+    el.selectionSummary.textContent = "No card selected";
+  } else {
+    el.selectionSummary.textContent = selected.map((card) => card.name).join(", ");
   }
-  const stackTarget = valueOf("stackTargetInput");
-  if (stackTarget) {
-    action.target_stack_item_id = stackTarget;
+
+  renderContextTools(active, hint);
+
+  el.playCardButton.disabled = !(selected.length === 1 && hint?.playable && hint.target_type === "none");
+  el.discardCardButton.disabled = !(selected.length === 1 && legal.has("discard_card"));
+  el.startHackButton.disabled = !(selected.length === 2 && legal.has("start_hack_by_discard"));
+  el.passPriorityButton.disabled = !legal.has("pass_priority");
+  el.layLowButton.disabled = !(legal.has("lay_low") && me?.investigations >= Number(el.layLowAmount.value));
+}
+
+function renderContextTools(card, hint) {
+  el.contextTools.innerHTML = "";
+  if (!card) {
+    el.contextTools.textContent = "Select cards from your hand";
+    return;
   }
-  submitAction(action);
+  if (!hint?.playable) {
+    el.contextTools.textContent = hint?.reason || "Card cannot be played";
+    return;
+  }
+  const type = hint.target_type;
+  if (type === "none") {
+    el.contextTools.textContent = "Ready";
+  } else if (type === "player") {
+    el.contextTools.textContent = "Choose a highlighted player";
+  } else if (type === "hardware") {
+    el.contextTools.textContent = "Choose highlighted hardware";
+  } else if (type === "stack_item") {
+    el.contextTools.textContent = "Choose a highlighted stack item";
+  } else if (type === "web_card") {
+    el.contextTools.textContent = "Choose a highlighted Web card";
+  } else if (type === "web_pair") {
+    el.contextTools.textContent = state.rewriteFirstId ? "Choose the second Web card" : "Choose the first Web card";
+    if (state.rewriteFirstId) el.contextTools.append(toolButton("Reset", () => {
+      state.rewriteFirstId = "";
+      render();
+    }));
+  } else if (type === "web_order") {
+    const total = hint.valid_targets.web_cards.length;
+    const row = document.createElement("div");
+    row.className = "tool-row";
+    row.innerHTML = `<span>Order ${state.quantumOrder.length} / ${total}</span>`;
+    row.append(toolButton("Reset", () => {
+      state.quantumOrder = [];
+      render();
+    }));
+    el.contextTools.append(row);
+    const submit = toolButton("Submit Order", () => submitQuantumOrder(card.id, total));
+    submit.disabled = state.quantumOrder.length !== total;
+    el.contextTools.append(submit);
+  }
+}
+
+function renderChoice() {
+  const choice = state.privateState?.my_choice;
+  el.choiceActions.innerHTML = "";
+  if (!choice) {
+    el.choicePanel.classList.add("hidden");
+    return;
+  }
+  el.choicePanel.classList.remove("hidden");
+  el.choicePrompt.textContent = choice.prompt;
+  if (choice.kind === "cloud_storage") {
+    for (const card of choice.valid_cards || []) {
+      const button = toolButton(card.name, () => submitAction({ type: "answer_choice", answer: "choose_card", card_id: card.id }));
+      button.addEventListener("mouseenter", () => showPreview(card.name));
+      button.addEventListener("focus", () => showPreview(card.name));
+      el.choiceActions.append(button);
+    }
+  } else {
+    for (const option of choice.options || []) {
+      el.choiceActions.append(toolButton(option.replaceAll("_", " "), () => submitAction({ type: "answer_choice", answer: option })));
+    }
+  }
+}
+
+function renderPreview() {
+  const selected = selectedCard();
+  const name = state.previewName || selected?.name || "";
+  if (!name) {
+    el.previewImage.src = artPath("Card Back");
+    el.previewName.textContent = "Inspect";
+    el.previewMeta.textContent = "Hover or focus a card";
+    el.previewText.textContent = "";
+    return;
+  }
+  const definition = state.cards.get(name);
+  el.previewImage.src = artPath(name);
+  el.previewName.textContent = name;
+  el.previewMeta.textContent = definition ? `${definition.card_type} · ${definition.magnifiers} investigation` : "";
+  el.previewText.textContent = definition?.text || "";
+}
+
+function cardNode(card, options = {}) {
+  const node = el.cardTemplate.content.firstElementChild.cloneNode(true);
+  node.dataset.cardId = card.id;
+  node.querySelector("img").src = artPath(card.name);
+  node.querySelector("img").alt = card.name;
+  node.querySelector("span").textContent = options.label || card.name;
+  node.addEventListener("mouseenter", () => showPreview(card.name));
+  node.addEventListener("focus", () => showPreview(card.name));
+  return node;
+}
+
+function toggleHandSelection(cardId) {
+  if (state.selectedHandIds.has(cardId)) {
+    state.selectedHandIds.delete(cardId);
+  } else {
+    state.selectedHandIds.add(cardId);
+  }
+  state.rewriteFirstId = "";
+  state.quantumOrder = [];
+  const card = selectedHandCards().at(-1);
+  if (card) showPreview(card.name);
+  render();
+}
+
+function handlePlayerTarget(playerId) {
+  const card = selectedCard();
+  const hint = card ? cardHint(card.id) : null;
+  if (!card || !hint?.playable || hint.target_type !== "player") return;
+  if (!(hint.valid_targets.players || []).includes(playerId)) return;
+  submitAction({ type: "play_card", card_id: card.id, payload: { target_player_id: playerId } });
+}
+
+function handleHardwareTarget(playerId, hardwareId) {
+  const card = selectedCard();
+  const hint = card ? cardHint(card.id) : null;
+  if (!card || !hint?.playable || hint.target_type !== "hardware") return;
+  const valid = (hint.valid_targets.hardware || []).some((target) => target.card_id === hardwareId);
+  if (!valid) return;
+  submitAction({ type: "play_card", card_id: card.id, payload: { target_player_id: playerId, hardware_id: hardwareId } });
+}
+
+function handleStackTarget(stackItemId) {
+  const card = selectedCard();
+  const hint = card ? cardHint(card.id) : null;
+  if (!card || !hint?.playable || hint.target_type !== "stack_item") return;
+  if (!(hint.valid_targets.stack_items || []).includes(stackItemId)) return;
+  submitAction({ type: "play_card", card_id: card.id, target_stack_item_id: stackItemId });
+}
+
+function handleWebTarget(webCardId) {
+  const card = selectedCard();
+  const hint = card ? cardHint(card.id) : null;
+  if (!card || !hint?.playable) return;
+  const validIds = new Set((hint.valid_targets.web_cards || []).map((target) => target.id));
+  if (!validIds.has(webCardId)) return;
+
+  if (hint.target_type === "web_card") {
+    submitAction({ type: "play_card", card_id: card.id, payload: { web_card_id: webCardId } });
+  } else if (hint.target_type === "web_pair") {
+    if (!state.rewriteFirstId) {
+      state.rewriteFirstId = webCardId;
+      render();
+    } else if (state.rewriteFirstId !== webCardId) {
+      submitAction({
+        type: "play_card",
+        card_id: card.id,
+        payload: { first_web_card_id: state.rewriteFirstId, second_web_card_id: webCardId },
+      });
+    }
+  } else if (hint.target_type === "web_order") {
+    if (state.quantumOrder.includes(webCardId)) {
+      state.quantumOrder = state.quantumOrder.filter((id) => id !== webCardId);
+    } else {
+      state.quantumOrder.push(webCardId);
+    }
+    render();
+  }
+}
+
+function playSelectedNoTargetCard() {
+  const card = selectedCard();
+  const hint = card ? cardHint(card.id) : null;
+  if (!card || !hint?.playable || hint.target_type !== "none") return;
+  submitAction({ type: "play_card", card_id: card.id });
 }
 
 function discardSelectedCard() {
@@ -325,319 +668,77 @@ function startHackByDiscard() {
   submitAction({ type: "start_hack_by_discard", card_ids: selected.map((card) => card.id) });
 }
 
-function buildPayloadForCard(card) {
-  const name = card.name;
-  if (["ROOTKIT", "RANSOMWARE"].includes(name)) {
-    return { target_player_id: valueOf("targetPlayerInput") };
-  }
-  if (name === "REWRITE") {
-    return {
-      first_index: Number(valueOf("firstWebIndexInput")),
-      second_index: Number(valueOf("secondWebIndexInput")),
-    };
-  }
-  if (name === "PHISHING ATTACK") {
-    return { web_index: Number(valueOf("webIndexInput")) };
-  }
-  if (name === "QUANTUM COMPUTING") {
-    const order = valueOf("webOrderInput")
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean);
-    return { web_card_ids: order };
-  }
-  if (name === "CORPO RAID") {
-    return {
-      target_player_id: valueOf("targetPlayerInput"),
-      hardware_id: valueOf("hardwareInput"),
-    };
-  }
-  return {};
+function submitQuantumOrder(cardId, total) {
+  if (state.quantumOrder.length !== total) return;
+  submitAction({ type: "play_card", card_id: cardId, payload: { web_card_ids: state.quantumOrder } });
 }
 
-function valueOf(id) {
-  return document.getElementById(id)?.value || "";
-}
-
-function render() {
-  renderSession();
-  renderPlayers();
-  renderBoard();
-  renderHand();
-  renderActions();
-  renderChoice();
-}
-
-function renderSession() {
-  const room = state.publicState;
-  const status = room?.status || "none";
-  el.sessionLine.textContent = state.roomCode ? `Room ${state.roomCode} · ${status}` : "No room connected";
-  el.startGameButton.disabled = !state.roomCode;
-  el.reconnectButton.disabled = !state.roomCode || !state.playerToken;
-}
-
-function renderPlayers() {
-  const room = state.publicState;
-  el.playersList.innerHTML = "";
-  if (!room?.players?.length) {
-    el.playersList.append(emptyLine("No players yet"));
-    return;
-  }
-  for (const player of room.players) {
-    const tile = document.createElement("div");
-    tile.className = `player-tile${player.id === state.playerId ? " is-me" : ""}`;
-    const badges = [];
-    if (room.game?.active_player_id === player.id) badges.push(`<span class="badge active">active</span>`);
-    if (room.game?.datajack_player_id === player.id) badges.push(`<span class="badge datajack">datajack</span>`);
-    if (!player.alive) badges.push(`<span class="badge">out</span>`);
-    tile.innerHTML = `
-      <div class="player-name">
-        <span>${escapeHtml(player.nickname)}</span>
-        <span>${player.id === state.playerId ? "you" : ""}</span>
-      </div>
-      <div class="badges">${badges.join("")}</div>
-      <div class="stat-row">
-        <span class="stat">Servers ${player.servers}</span>
-        <span class="stat">Investigation ${player.investigations}</span>
-        <span class="stat">Hand ${player.hand_count}</span>
-      </div>
-      <div class="hardware-row"></div>
-    `;
-    const hardwareRow = tile.querySelector(".hardware-row");
-    for (const card of player.hardware || []) {
-      const img = document.createElement("img");
-      img.src = artPath(card.name);
-      img.alt = card.name;
-      img.title = card.name;
-      hardwareRow.append(img);
-    }
-    el.playersList.append(tile);
-  }
-}
-
-function renderBoard() {
-  const game = state.publicState?.game;
-  el.deckCount.textContent = game?.deck_count ?? 0;
-  el.discardCount.textContent = game?.discard_count ?? 0;
-  el.priorityPlayer.textContent = playerName(game?.current_priority_player_id) || "-";
-  el.webCount.textContent = `${game?.web?.length || 0} / 24`;
-  el.stackCount.textContent = game?.stack?.length || 0;
-  renderCardRow(el.webCards, game?.web || [], { small: true, selectable: false, showIndex: true });
-  renderStack(game?.stack || []);
-
-  if (game?.winner_id) {
-    el.winnerBanner.textContent = `${playerName(game.winner_id)} wins`;
-    el.winnerBanner.classList.remove("hidden");
-  } else {
-    el.winnerBanner.classList.add("hidden");
-  }
-}
-
-function renderStack(stack) {
-  el.stackList.innerHTML = "";
-  if (!stack.length) {
-    el.stackList.append(emptyLine("Stack empty"));
-    return;
-  }
-  [...stack].reverse().forEach((item, index) => {
-    const row = document.createElement("div");
-    row.className = "stack-item";
-    const cardName = item.card?.name || item.action_type;
-    row.innerHTML = `
-      <img src="${artPath(cardName)}" alt="">
-      <div>
-        <strong>${escapeHtml(cardName)}${index === 0 ? " · top" : ""}</strong>
-        <span>${escapeHtml(playerName(item.actor_id) || item.actor_id)} ${item.canceled ? "· canceled" : ""}</span>
-      </div>
-    `;
-    el.stackList.append(row);
-  });
-}
-
-function renderHand() {
-  const hand = state.privateState?.me?.hand || [];
-  el.handCount.textContent = hand.length;
-  renderCardRow(el.handCards, hand, { selectable: true });
-}
-
-function renderCardRow(container, cards, options = {}) {
-  container.innerHTML = "";
-  if (!cards.length) {
-    container.append(emptyLine("Empty"));
-    return;
-  }
-  cards.forEach((card, index) => {
-    const node = el.cardTemplate.content.firstElementChild.cloneNode(true);
-    node.dataset.cardId = card.id;
-    if (options.small) node.classList.add("is-small");
-    if (state.selectedCardIds.has(card.id)) node.classList.add("is-selected");
-    node.querySelector("img").src = artPath(card.name);
-    node.querySelector("img").alt = card.name;
-    node.querySelector("span").textContent = options.showIndex ? `${index}: ${card.name}` : card.name;
-    if (options.selectable) {
-      node.addEventListener("click", () => toggleSelected(card.id));
-    } else {
-      node.disabled = true;
-    }
-    container.append(node);
-  });
-}
-
-function renderActions() {
-  const legal = new Set(state.privateState?.legal_actions || []);
-  const selected = selectedHandCards();
-  const selectedNames = selected.map((card) => card.name).join(", ");
-  el.selectionSummary.textContent = selected.length ? selectedNames : "No card selected";
-
-  el.playCardButton.disabled = !legal.has("play_card") || selected.length !== 1;
-  el.discardCardButton.disabled = !legal.has("discard_card") || selected.length !== 1;
-  el.startHackButton.disabled = !legal.has("start_hack_by_discard") || selected.length !== 2;
-  el.passPriorityButton.disabled = !legal.has("pass_priority");
-  el.layLowButton.disabled = !legal.has("lay_low");
-  renderDynamicInputs(selected[0]);
-}
-
-function renderDynamicInputs(card) {
-  el.dynamicInputs.innerHTML = "";
-  if (!card) return;
-  if (["ROOTKIT", "RANSOMWARE", "CORPO RAID"].includes(card.name)) {
-    el.dynamicInputs.append(makeSelect("targetPlayerInput", "Target Player", alivePlayerOptions()));
-  }
-  if (card.name === "CORPO RAID") {
-    el.dynamicInputs.append(makeSelect("hardwareInput", "Hardware", hardwareOptions(valueOf("targetPlayerInput"))));
-    const target = document.getElementById("targetPlayerInput");
-    target?.addEventListener("change", () => renderDynamicInputs(card));
-  }
-  if (card.name === "REWRITE") {
-    el.dynamicInputs.append(makeNumberInput("firstWebIndexInput", "First Web Index", 0));
-    el.dynamicInputs.append(makeNumberInput("secondWebIndexInput", "Second Web Index", 1));
-  }
-  if (card.name === "PHISHING ATTACK") {
-    el.dynamicInputs.append(makeNumberInput("webIndexInput", "Web Index", 0));
-  }
-  if (card.name === "QUANTUM COMPUTING") {
-    const ids = (state.publicState?.game?.web || []).map((webCard) => webCard.id).join(", ");
-    el.dynamicInputs.append(makeTextInput("webOrderInput", "Web Card IDs", ids));
-  }
-  if (card.name === "QUICK HACK") {
-    el.dynamicInputs.append(makeSelect("stackTargetInput", "Stack Target", stackOptions()));
-  }
-}
-
-function renderChoice() {
-  const choice = state.privateState?.my_choice;
-  if (!choice) {
-    el.choicePanel.classList.add("hidden");
-    return;
-  }
-  el.choicePanel.classList.remove("hidden");
-  el.choicePrompt.textContent = choice.prompt;
-  el.choiceActions.innerHTML = "";
-  for (const option of choice.options) {
-    if (choice.kind === "cloud_storage") {
-      const top = state.publicState?.game?.discard_top;
-      const button = makeButton(top ? `Take ${top.name}` : "Take Card", () => {
-        if (top) submitAction({ type: "answer_choice", answer: option, card_id: top.id });
-      });
-      button.disabled = !top;
-      el.choiceActions.append(button);
-    } else {
-      el.choiceActions.append(makeButton(option.replaceAll("_", " "), () => submitAction({ type: "answer_choice", answer: option })));
-    }
-  }
-}
-
-function toggleSelected(cardId) {
-  if (state.selectedCardIds.has(cardId)) {
-    state.selectedCardIds.delete(cardId);
-  } else {
-    state.selectedCardIds.add(cardId);
-  }
-  render();
+function isWebTarget(cardId, validWebIds) {
+  const hint = selectedCard() ? cardHint(selectedCard().id) : null;
+  if (!hint?.playable) return false;
+  if (!["web_card", "web_pair", "web_order"].includes(hint.target_type)) return false;
+  if (hint.target_type === "web_order" && state.quantumOrder.includes(cardId)) return false;
+  return validWebIds.has(cardId);
 }
 
 function selectedHandCards() {
   const hand = state.privateState?.me?.hand || [];
-  return hand.filter((card) => state.selectedCardIds.has(card.id));
+  return hand.filter((card) => state.selectedHandIds.has(card.id));
 }
 
-function alivePlayerOptions() {
-  return (state.publicState?.players || [])
-    .filter((player) => player.alive)
-    .map((player) => ({ value: player.id, label: player.nickname }));
+function selectedCard() {
+  const selected = selectedHandCards();
+  return selected.length === 1 ? selected[0] : null;
 }
 
-function hardwareOptions(playerId) {
-  const player = (state.publicState?.players || []).find((candidate) => candidate.id === playerId);
-  return (player?.hardware || []).map((card) => ({ value: card.id, label: card.name }));
+function activeProjection() {
+  const selected = selectedCard();
+  const direction = selected?.name === "HONEYPOT" ? "reverse" : "forward";
+  return state.publicState?.game?.datajack_projection?.[direction] || null;
 }
 
-function stackOptions() {
-  return (state.publicState?.game?.stack || []).map((item) => ({
-    value: item.id,
-    label: item.card?.name || item.action_type,
-  }));
+function cardHint(cardId) {
+  return state.privateState?.card_actions?.[cardId] || null;
 }
 
-function makeSelect(id, labelText, options) {
-  const label = document.createElement("label");
-  label.textContent = labelText;
-  const select = document.createElement("select");
-  select.id = id;
-  for (const option of options) {
-    const node = document.createElement("option");
-    node.value = option.value;
-    node.textContent = option.label;
-    select.append(node);
-  }
-  label.append(select);
-  return label;
+function pruneSelection() {
+  const ids = new Set((state.privateState?.me?.hand || []).map((card) => card.id));
+  state.selectedHandIds = new Set([...state.selectedHandIds].filter((id) => ids.has(id)));
 }
 
-function makeNumberInput(id, labelText, value) {
-  const label = document.createElement("label");
-  label.textContent = labelText;
-  const input = document.createElement("input");
-  input.id = id;
-  input.type = "number";
-  input.min = "0";
-  input.value = String(value);
-  label.append(input);
-  return label;
-}
-
-function makeTextInput(id, labelText, value) {
-  const label = document.createElement("label");
-  label.textContent = labelText;
-  const input = document.createElement("input");
-  input.id = id;
-  input.type = "text";
-  input.value = value;
-  input.spellcheck = false;
-  label.append(input);
-  return label;
-}
-
-function makeButton(label, onClick) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.textContent = label;
-  button.addEventListener("click", onClick);
-  return button;
-}
-
-function emptyLine(text) {
-  const div = document.createElement("div");
-  div.className = "event";
-  div.textContent = text;
-  return div;
+function showPreview(cardName) {
+  state.previewName = cardName;
+  renderPreview();
 }
 
 function playerName(playerId) {
   return (state.publicState?.players || []).find((player) => player.id === playerId)?.nickname || "";
 }
 
+function chip(text, className) {
+  const span = document.createElement("span");
+  span.className = `chip ${className}`.trim();
+  span.textContent = text;
+  return span;
+}
+
+function toolButton(text, onClick) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = text;
+  button.addEventListener("click", onClick);
+  return button;
+}
+
+function empty(text) {
+  const div = document.createElement("div");
+  div.className = "empty-state";
+  div.textContent = text;
+  return div;
+}
+
 function artPath(cardName) {
+  if (cardName === "Card Back") return "./CardArt/Card%20Back.png";
   const file = artOverrides[cardName] || `${cardName}.png`;
   return `./CardArt/${encodeURIComponent(file).replaceAll("%2F", "/")}`;
 }
