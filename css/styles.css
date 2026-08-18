@@ -1,13 +1,16 @@
 :root {
-  --bg-top: #081220;
-  --bg-bottom: #0e2237;
-  --text-main: #f7fbff;
-  --text-soft: #b9cbdf;
-  --portal-1: #4ecdc4;
-  --portal-2: #ff9f1c;
-  --portal-3: #2ec4ff;
-  --card-bg: rgba(7, 20, 34, 0.7);
-  --card-border: rgba(130, 180, 224, 0.35);
+  --bg: #eef2f4;
+  --surface: #ffffff;
+  --surface-strong: #f7f9fa;
+  --border: #d4dde2;
+  --text: #171d22;
+  --muted: #65727c;
+  --online: #35d07f;
+  --offline: #c84545;
+  --warning: #9d6b10;
+  --minecraft: #6fcf75;
+  --valheim: #78a8d8;
+  --shadow: 0 24px 70px rgba(55, 70, 78, 0.16);
 }
 
 * {
@@ -17,190 +20,412 @@
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: "Space Grotesk", "Segoe UI", sans-serif;
-  color: var(--text-main);
-  background: linear-gradient(165deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
-  overflow-x: hidden;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--text);
+  background:
+    linear-gradient(135deg, rgba(111, 207, 117, 0.18), transparent 32rem),
+    linear-gradient(315deg, rgba(120, 168, 216, 0.22), transparent 34rem),
+    var(--bg);
 }
 
-.scene-glow {
-  position: fixed;
-  width: 28rem;
-  height: 28rem;
-  border-radius: 50%;
-  filter: blur(60px);
-  opacity: 0.3;
-  z-index: 0;
-  pointer-events: none;
+button,
+input,
+textarea,
+select {
+  font: inherit;
 }
 
-.scene-glow-left {
-  background: var(--portal-1);
-  top: -8rem;
-  left: -8rem;
-}
-
-.scene-glow-right {
-  background: var(--portal-2);
-  bottom: -10rem;
-  right: -8rem;
-}
-
-.home {
-  position: relative;
-  z-index: 1;
-  width: min(1080px, 92vw);
+.status-shell {
+  width: min(1120px, calc(100vw - 32px));
+  min-height: 100vh;
   margin: 0 auto;
-  padding: 4.2rem 0 3.5rem;
+  padding: 48px 0 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 22px;
 }
 
-.hero {
-  animation: fade-up 650ms ease-out both;
+.site-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
 }
 
 .eyebrow {
-  display: inline-block;
-  margin: 0;
-  padding: 0.35rem 0.8rem;
-  border: 1px solid rgba(255, 255, 255, 0.26);
-  border-radius: 999px;
-  font-size: 0.82rem;
-  letter-spacing: 0.08em;
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--text-soft);
+}
+
+h1,
+h2,
+p,
+dl,
+dd {
+  margin: 0;
 }
 
 h1 {
-  font-family: "Bebas Neue", sans-serif;
-  font-size: clamp(2.6rem, 7vw, 5rem);
-  letter-spacing: 0.03em;
-  line-height: 0.92;
-  margin: 1rem 0 0.8rem;
+  max-width: 9ch;
+  font-size: clamp(3rem, 9vw, 6.4rem);
+  line-height: 0.88;
+  letter-spacing: 0;
 }
 
-.lead {
-  max-width: 63ch;
-  margin: 0;
-  color: var(--text-soft);
-  font-size: 1.05rem;
-  line-height: 1.55;
+.summary-panel {
+  min-width: 160px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+  text-align: right;
 }
 
-.portal-grid {
-  margin-top: 2.2rem;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 1rem;
-}
-
-.portal-card {
+.summary-value {
   display: block;
-  text-decoration: none;
-  color: inherit;
-  border-radius: 18px;
-  border: 1px solid var(--card-border);
-  background: var(--card-bg);
-  backdrop-filter: blur(8px);
-  padding: 1rem;
-  min-height: 270px;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.summary-label {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.server-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.server-card {
+  display: grid;
+  grid-template-columns: minmax(130px, 34%) 1fr;
+  min-height: 360px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.server-card.is-offline .server-art {
+  filter: grayscale(0.85);
+  opacity: 0.72;
+}
+
+.server-art {
   position: relative;
   overflow: hidden;
-  transition: transform 240ms ease, border-color 240ms ease, box-shadow 240ms ease;
-  animation: fade-up 650ms ease-out both;
+  min-height: 100%;
 }
 
-.portal-card:nth-child(2) {
-  animation-delay: 110ms;
-}
-
-.portal-card:nth-child(3) {
-  animation-delay: 220ms;
-}
-
-.portal-card:hover,
-.portal-card:focus-visible {
-  transform: translateY(-6px);
-  border-color: rgba(255, 255, 255, 0.5);
-  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.35);
-}
-
-.portal-ring {
-  width: 134px;
-  height: 134px;
-  border-radius: 50%;
-  display: block;
-  margin: 0 auto 1rem;
-  border: 3px solid rgba(255, 255, 255, 0.35);
+.minecraft-art {
   background:
-    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 33%),
-    conic-gradient(from 130deg, var(--portal-1), var(--portal-2), var(--portal-3), var(--portal-1));
-  box-shadow:
-    inset 0 0 20px rgba(255, 255, 255, 0.35),
-    0 0 24px rgba(78, 205, 196, 0.4);
-  animation: spin 9s linear infinite;
+    linear-gradient(90deg, rgba(0, 0, 0, 0.14) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.14) 1px, transparent 1px),
+    linear-gradient(180deg, #76c46d 0 42%, #6a4a2f 42% 100%);
+  background-size: 38px 38px, 38px 38px, auto;
 }
 
-.portal-content {
-  display: block;
-  text-align: center;
+.minecraft-art span {
+  position: absolute;
+  width: 38px;
+  height: 38px;
+  background: rgba(255, 255, 255, 0.18);
 }
 
-.portal-title {
-  display: block;
-  font-size: 1.18rem;
-  font-weight: 700;
+.minecraft-art span:nth-child(1) {
+  top: 38px;
+  left: 38px;
 }
 
-.portal-description {
-  display: block;
-  margin-top: 0.45rem;
-  color: var(--text-soft);
-  line-height: 1.45;
-  min-height: 2.8em;
+.minecraft-art span:nth-child(2) {
+  top: 76px;
+  right: 38px;
 }
 
-.portal-cta {
-  display: inline-block;
-  margin-top: 1rem;
-  padding: 0.5rem 0.85rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.38);
-  font-size: 0.82rem;
-  letter-spacing: 0.05em;
+.minecraft-art span:nth-child(3) {
+  bottom: 76px;
+  left: 0;
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.minecraft-art span:nth-child(4) {
+  bottom: 38px;
+  right: 76px;
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.valheim-art {
+  background:
+    radial-gradient(circle at 42% 34%, rgba(255, 255, 255, 0.28) 0 7%, transparent 8%),
+    linear-gradient(180deg, #87b7db 0 47%, #244d52 47% 100%);
+}
+
+.valheim-art::before,
+.valheim-art::after {
+  content: "";
+  position: absolute;
+  inset: auto -18px 64px;
+  height: 74px;
+  background: #172a2c;
+  clip-path: polygon(0 100%, 14% 24%, 28% 100%, 43% 12%, 61% 100%, 78% 30%, 100% 100%);
+}
+
+.valheim-art::after {
+  bottom: 24px;
+  background: #203f35;
+  transform: scaleX(1.15);
+}
+
+.valheim-art span {
+  position: absolute;
+  bottom: 0;
+  width: 52px;
+  background: #37624c;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.valheim-art span:nth-child(1) {
+  left: 12px;
+  height: 122px;
+}
+
+.valheim-art span:nth-child(2) {
+  left: 66px;
+  height: 96px;
+}
+
+.valheim-art span:nth-child(3) {
+  right: 28px;
+  height: 138px;
+}
+
+.valheim-art span:nth-child(4) {
+  right: 84px;
+  height: 88px;
+}
+
+.server-content {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 26px;
+}
+
+.server-topline {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.game-label {
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-.portal-card-muted {
-  opacity: 0.88;
+h2 {
+  font-size: clamp(1.5rem, 3vw, 2.3rem);
+  line-height: 1.02;
+  letter-spacing: 0;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+.status-pill {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: var(--warning);
+  font-size: 0.82rem;
+  font-weight: 800;
 }
 
-@keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(18px);
+.status-pill::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 14px currentColor;
+}
+
+.status-pill.is-online {
+  color: var(--online);
+}
+
+.status-pill.is-offline,
+.status-pill.is-error {
+  color: var(--offline);
+}
+
+.status-pill.is-loading::before {
+  animation: pulse 1.1s ease-in-out infinite;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.metric-grid div {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-strong);
+  padding: 14px;
+}
+
+dt {
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+dd {
+  min-height: 1.25em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1.2rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.status-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--muted);
+}
+
+.refresh-button {
+  width: 46px;
+  height: 46px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  background: var(--surface);
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.refresh-button:hover,
+.refresh-button:focus-visible {
+  transform: translateY(-2px);
+  border-color: var(--muted);
+  background: var(--surface-strong);
+}
+
+.refresh-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.refresh-button svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.35;
   }
-  to {
+
+  50% {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
-@media (max-width: 640px) {
-  .home {
-    padding-top: 3.1rem;
+@media (max-width: 840px) {
+  .status-shell {
+    justify-content: start;
+    padding-top: 34px;
   }
 
-  .portal-grid {
+  .site-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  h1 {
+    max-width: none;
+  }
+
+  .summary-panel {
+    text-align: left;
+  }
+
+  .server-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .status-shell {
+    width: min(100% - 20px, 1120px);
+    padding-bottom: 20px;
+  }
+
+  .server-card {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .server-art {
+    min-height: 156px;
+  }
+
+  .server-content {
+    padding: 18px;
+  }
+
+  .server-topline {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .status-pill {
+    width: fit-content;
+  }
+
+  .metric-grid {
     grid-template-columns: 1fr;
   }
 
-  .portal-card {
-    min-height: 245px;
+  dd {
+    white-space: normal;
   }
 }
