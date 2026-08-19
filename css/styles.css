@@ -10,6 +10,7 @@
   --warning: #9d6b10;
   --minecraft: #6fcf75;
   --valheim: #78a8d8;
+  --zomboid: #c0a060;
   --shadow: 0 24px 70px rgba(55, 70, 78, 0.16);
 }
 
@@ -36,7 +37,7 @@ select {
 }
 
 .status-shell {
-  width: min(1120px, calc(100vw - 32px));
+  width: min(1280px, calc(100vw - 32px));
   min-height: 100vh;
   margin: 0 auto;
   padding: 48px 0 32px;
@@ -103,14 +104,14 @@ h1 {
 
 .server-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
   gap: 18px;
 }
 
 .server-card {
   display: grid;
-  grid-template-columns: minmax(130px, 34%) 1fr;
-  min-height: 360px;
+  grid-template-rows: 190px 1fr;
+  min-height: 430px;
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -126,7 +127,7 @@ h1 {
 .server-art {
   position: relative;
   overflow: hidden;
-  min-height: 100%;
+  min-height: 0;
 }
 
 .minecraft-art {
@@ -216,12 +217,78 @@ h1 {
   height: 88px;
 }
 
+.zomboid-art {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.12) 1px, transparent 1px),
+    linear-gradient(180deg, #4f5b5c 0 39%, #2e3735 39% 58%, #181f1f 58% 100%);
+  background-size: 42px 42px, auto;
+}
+
+.zomboid-art::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(115deg, transparent 0 48%, rgba(226, 210, 149, 0.32) 48% 52%, transparent 52%),
+    linear-gradient(180deg, transparent 0 58%, rgba(192, 160, 96, 0.34) 58% 60%, transparent 60%);
+}
+
+.zomboid-art::after {
+  content: "";
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 24px;
+  height: 88px;
+  background: #252a27;
+  clip-path: polygon(0 100%, 6% 30%, 23% 30%, 27% 0, 61% 0, 67% 31%, 87% 31%, 100% 100%);
+}
+
+.zomboid-art span {
+  position: absolute;
+  z-index: 1;
+  background: #161918;
+}
+
+.zomboid-art span:nth-child(1),
+.zomboid-art span:nth-child(2) {
+  top: 46px;
+  width: 34px;
+  height: 48px;
+  border: 5px solid #c0a060;
+  background: #273132;
+}
+
+.zomboid-art span:nth-child(1) {
+  left: 28px;
+}
+
+.zomboid-art span:nth-child(2) {
+  right: 32px;
+}
+
+.zomboid-art span:nth-child(3) {
+  left: 42px;
+  bottom: 84px;
+  width: 22px;
+  height: 54px;
+  border-radius: 999px 999px 2px 2px;
+}
+
+.zomboid-art span:nth-child(4) {
+  right: 52px;
+  bottom: 96px;
+  width: 24px;
+  height: 42px;
+  border-radius: 999px 999px 2px 2px;
+}
+
 .server-content {
   padding: 24px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 26px;
+  gap: 24px;
 }
 
 .server-topline {
@@ -229,6 +296,7 @@ h1 {
   align-items: start;
   justify-content: space-between;
   gap: 18px;
+  min-height: 92px;
 }
 
 .game-label {
@@ -241,8 +309,8 @@ h1 {
 }
 
 h2 {
-  font-size: clamp(1.5rem, 3vw, 2.3rem);
-  line-height: 1.02;
+  font-size: clamp(1.4rem, 1.7vw, 1.9rem);
+  line-height: 1.08;
   letter-spacing: 0;
 }
 
@@ -389,7 +457,7 @@ dd {
   }
 
   .server-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
   }
 }
 
@@ -400,12 +468,8 @@ dd {
   }
 
   .server-card {
-    grid-template-columns: 1fr;
+    grid-template-rows: 156px 1fr;
     min-height: 0;
-  }
-
-  .server-art {
-    min-height: 156px;
   }
 
   .server-content {
@@ -415,6 +479,7 @@ dd {
   .server-topline {
     align-items: stretch;
     flex-direction: column;
+    min-height: 0;
   }
 
   .status-pill {

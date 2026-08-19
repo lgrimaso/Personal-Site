@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Live status for Logan Grimason's game servers.">
   <title>Logan Grimason | Server Status</title>
-  <link rel="stylesheet" href="./css/styles.css">
+  <link rel="stylesheet" href="./css/styles.css?v=server-status-20260819-polish">
 </head>
 <body>
   <main class="status-shell">
@@ -94,6 +94,43 @@
           </dl>
         </div>
       </article>
+
+      <article class="server-card" data-server-card="zomboid">
+        <div class="server-art zomboid-art" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="server-content">
+          <div class="server-topline">
+            <div>
+              <p class="game-label">Project Zomboid</p>
+              <h2>Zomboid</h2>
+            </div>
+            <span class="status-pill is-loading" data-status>Checking</span>
+          </div>
+
+          <dl class="metric-grid">
+            <div>
+              <dt>Players</dt>
+              <dd data-players>--</dd>
+            </div>
+            <div>
+              <dt>Latency</dt>
+              <dd data-latency>--</dd>
+            </div>
+            <div>
+              <dt>Map</dt>
+              <dd data-world>--</dd>
+            </div>
+            <div>
+              <dt>Last Check</dt>
+              <dd data-checked>--</dd>
+            </div>
+          </dl>
+        </div>
+      </article>
     </section>
 
     <footer class="status-footer">
@@ -121,21 +158,57 @@
       valheim: {
         endpoint: `${API_BASE}/valheim`,
         versionKey: "map"
+      },
+      zomboid: {
+        endpoint: `${API_BASE}/zomboid`,
+        versionKey: "map"
       }
     };
+
+    const serverIds = Object.keys(serverLabels);
 
     const onlineCount = document.querySelector("#online-count");
     const refreshNote = document.querySelector("#refresh-note");
     const refreshButton = document.querySelector("#refresh-button");
 
-    function formatPlayers(players) {
+    function firstNumber(...values) {
+      return values.find((value) => typeof value === "number");
+    }
+
+    function formatPlayers(server) {
+      const players = server?.players;
+
       if (!players || typeof players.online !== "number") {
+        if (Array.isArray(players)) {
+          const maxPlayers = firstNumber(server?.max_players, server?.players_max);
+          return typeof maxPlayers === "number" ? `${players.length}/${maxPlayers}` : String(players.length);
+        }
+
+        const onlinePlayers = firstNumber(server?.players_online, server?.player_count, server?.online_players);
+        const maxPlayers = firstNumber(server?.max_players, server?.players_max);
+
+        if (typeof onlinePlayers === "number") {
+          return typeof maxPlayers === "number" ? `${onlinePlayers}/${maxPlayers}` : String(onlinePlayers);
+        }
+
         return "--";
       }
 
       return typeof players.max === "number"
         ? `${players.online}/${players.max}`
         : String(players.online);
+    }
+
+    function formatDetail(server, id) {
+      const detailKeys = [serverLabels[id].versionKey, "version", "map"];
+
+      for (const key of detailKeys) {
+        if (server?.[key]) {
+          return server[key];
+        }
+      }
+
+      return "--";
     }
 
     function formatLatency(latency) {
@@ -181,10 +254,10 @@
 
       status.classList.add(server.online ? "is-online" : "is-offline");
       status.textContent = server.online ? "Online" : "Offline";
-      players.textContent = formatPlayers(server.players);
+      players.textContent = formatPlayers(server);
       latency.textContent = formatLatency(server.latency_ms);
       checked.textContent = formatCheckedAt(server.checked_at);
-      version.textContent = server[serverLabels[id].versionKey] || "--";
+      version.textContent = formatDetail(server, id);
     }
 
     async function fetchServers() {
@@ -219,7 +292,7 @@
       try {
         Object.assign(latest, await fetchServers());
       } catch {
-        await Promise.all(Object.keys(serverLabels).map(async (id) => {
+        await Promise.all(serverIds.map(async (id) => {
           try {
             latest[id] = await fetchServer(id);
           } catch {
@@ -228,8 +301,18 @@
         }));
       }
 
+      await Promise.all(serverIds
+        .filter((id) => !latest[id])
+        .map(async (id) => {
+          try {
+            latest[id] = await fetchServer(id);
+          } catch {
+            latest[id] = null;
+          }
+        }));
+
       let onlineTotal = 0;
-      Object.keys(serverLabels).forEach((id) => {
+      serverIds.forEach((id) => {
         const server = latest[id];
         setCardState(id, server, !server);
         if (server?.online) {
@@ -237,7 +320,7 @@
         }
       });
 
-      onlineCount.textContent = `${onlineTotal}/2`;
+      onlineCount.textContent = `${onlineTotal}/${serverIds.length}`;
       refreshNote.textContent = `Updated ${new Date().toLocaleTimeString([], {
         hour: "numeric",
         minute: "2-digit"
