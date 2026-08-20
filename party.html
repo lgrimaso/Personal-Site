@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Logan Grimason's current Pokemon Infinite Fusion party.">
+  <title>Logan Grimason | Pokemon Fusion Party</title>
+  <link rel="stylesheet" href="./css/styles.css?v=site-20260820-home">
+</head>
+<body>
+  <main class="status-shell party-shell">
+    <header class="site-header">
+      <div>
+        <p class="eyebrow">Logan Grimason</p>
+        <h1>Pokemon Fusion Party</h1>
+        <nav class="page-nav" aria-label="Site pages">
+          <a href="./index.html">Home</a>
+          <a href="./server-status.html">Server Status</a>
+          <a class="is-active" href="./party.html">Pokemon Fusion Party</a>
+        </nav>
+      </div>
+      <div class="summary-panel" aria-live="polite">
+        <span class="summary-value" id="party-count">--</span>
+        <span class="summary-label">party slots</span>
+      </div>
+    </header>
+
+    <section class="party-meta" aria-live="polite">
+      <p id="trainer-name">Loading party...</p>
+    </section>
+
+    <section class="party-grid" id="party-grid" aria-label="Pokemon Infinite Fusion party"></section>
+
+    <template id="party-card-template">
+      <article class="party-card">
+        <div class="sprite-stage" tabindex="0">
+          <img alt="" loading="lazy">
+          <span class="sprite-credit-tooltip" role="tooltip"></span>
+        </div>
+        <div class="party-card-content">
+          <div class="party-card-topline">
+            <div>
+              <p class="party-slot"></p>
+              <h2></h2>
+            </div>
+            <span class="level-pill"></span>
+          </div>
+
+          <div class="type-row"></div>
+
+          <dl class="party-details">
+            <div>
+              <dt>Fusion</dt>
+              <dd data-fusion></dd>
+            </div>
+          </dl>
+        </div>
+      </article>
+    </template>
+
+    <template id="empty-slot-template">
+      <article class="party-card empty-slot">
+        <div class="sprite-stage" aria-hidden="true">
+          <div class="empty-ball"></div>
+        </div>
+        <div class="party-card-content">
+          <div class="party-card-topline">
+            <div>
+              <p class="party-slot"></p>
+              <h2>Open Slot</h2>
+            </div>
+          </div>
+        </div>
+      </article>
+    </template>
+  </main>
+
+  <script>
+    const PARTY_URLS = [
+      "./data/party.json",
+      "/data/party.json",
+      "./party.json"
+    ];
+    const MAX_PARTY_SIZE = 6;
+    const TYPE_COLORS = {
+      normal: "#9a9a79",
+      fire: "#e56a3a",
+      water: "#4f83e6",
+      electric: "#d6a928",
+      grass: "#65a843",
+      ice: "#65b7c8",
+      fighting: "#b63b31",
+      poison: "#8e4a9e",
+      ground: "#c7a85a",
+      flying: "#8d9fe0",
+      psychic: "#e05a89",
+      bug: "#91a62e",
+      rock: "#a99048",
+      ghost: "#66528e",
+      dragon: "#6b4bd7",
+      dark: "#5e5047",
+      steel: "#aaa9be",
+      fairy: "#d889ad"
+    };
+
+    const partyCount = document.querySelector("#party-count");
+    const trainerName = document.querySelector("#trainer-name");
+    const partyGrid = document.querySelector("#party-grid");
+    const cardTemplate = document.querySelector("#party-card-template");
+    const emptySlotTemplate = document.querySelector("#empty-slot-template");
+
+    function formatPokemonName(mon) {
+      return mon.nickname || formatFusion(mon);
+    }
+
+    function formatFusion(mon) {
+      if (mon.head && mon.body) {
+        return `${mon.head} / ${mon.body}`;
+      }
+
+      return mon.head || mon.body || "Unknown Pokemon";
+    }
+
+    function createTypePill(type) {
+      const normalizedType = String(type || "unknown").toLowerCase();
+      const pill = document.createElement("span");
+      pill.className = "type-pill";
+      pill.textContent = normalizedType.toUpperCase();
+      pill.style.setProperty("--type-color", TYPE_COLORS[normalizedType] || "#65727c");
+      return pill;
+    }
+
+    function createPartyCard(mon, index) {
+      const card = cardTemplate.content.firstElementChild.cloneNode(true);
+      const image = card.querySelector("img");
+      const name = formatPokemonName(mon);
+
+      card.querySelector(".party-slot").textContent = `Slot ${index + 1}`;
+      card.querySelector("h2").textContent = name;
+      card.querySelector(".level-pill").textContent = typeof mon.level === "number" ? `Lv. ${mon.level}` : "Lv. --";
+      card.querySelector("[data-fusion]").textContent = formatFusion(mon);
+      card.querySelector(".sprite-credit-tooltip").textContent = `Sprite: ${mon.sprite_credit || "Unknown"}`;
+
+      if (mon.sprite_b64) {
+        image.src = `data:image/png;base64,${mon.sprite_b64}`;
+        image.alt = name;
+      } else {
+        image.remove();
+      }
+
+      const typeRow = card.querySelector(".type-row");
+      const types = Array.isArray(mon.types) ? mon.types.slice(0, 2) : [];
+      if (types.length) {
+        types.forEach((type) => typeRow.append(createTypePill(type)));
+      } else {
+        typeRow.append(createTypePill("unknown"));
+      }
+
+      return card;
+    }
+
+    function createEmptySlot(index) {
+      const card = emptySlotTemplate.content.firstElementChild.cloneNode(true);
+      card.querySelector(".party-slot").textContent = `Slot ${index + 1}`;
+      return card;
+    }
+
+    function renderParty(payload) {
+      const party = Array.isArray(payload.party) ? payload.party.slice(0, MAX_PARTY_SIZE) : [];
+      partyGrid.replaceChildren();
+
+      party.forEach((mon, index) => {
+        partyGrid.append(createPartyCard(mon, index));
+      });
+
+      for (let index = party.length; index < MAX_PARTY_SIZE; index += 1) {
+        partyGrid.append(createEmptySlot(index));
+      }
+
+      partyCount.textContent = `${party.length}/${MAX_PARTY_SIZE}`;
+      trainerName.textContent = payload.trainer ? `${payload.trainer}'s current team` : "Current team";
+    }
+
+    async function fetchPartyData() {
+      let lastError = null;
+
+      for (const url of PARTY_URLS) {
+        try {
+          const response = await fetch(url, { cache: "no-store" });
+          if (!response.ok) {
+            throw new Error(`${url} returned ${response.status}`);
+          }
+
+          const contentType = response.headers.get("content-type") || "";
+          if (!contentType.includes("json")) {
+            throw new Error(`${url} did not return JSON`);
+          }
+
+          return response.json();
+        } catch (error) {
+          lastError = error;
+        }
+      }
+
+      throw lastError || new Error("Party data request failed");
+    }
+
+    async function loadParty() {
+      try {
+        renderParty(await fetchPartyData());
+      } catch {
+        partyCount.textContent = "--";
+        trainerName.textContent = "Party data unavailable";
+        partyGrid.replaceChildren();
+      }
+    }
+
+    loadParty();
+  </script>
+</body>
+</html>

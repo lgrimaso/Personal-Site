@@ -3,334 +3,42 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Live status for Logan Grimason's game servers.">
-  <title>Logan Grimason | Server Status</title>
-  <link rel="stylesheet" href="./css/styles.css?v=server-status-20260819-polish">
+  <meta name="description" content="Logan Grimason's personal site hub.">
+  <title>Logan Grimason</title>
+  <link rel="stylesheet" href="./css/styles.css?v=site-20260820-home">
 </head>
 <body>
-  <main class="status-shell">
-    <header class="site-header">
-      <div>
-        <p class="eyebrow">Logan Grimason</p>
-        <h1>Server Status</h1>
+  <main class="status-shell home-shell">
+    <section class="home-hero" aria-labelledby="home-title">
+      <p class="eyebrow">Logan Grimason</p>
+      <h1 id="home-title">Site Hub</h1>
+
+      <div class="home-actions" aria-label="Site pages">
+        <a class="home-button server-button" href="./server-status.html">
+          <span class="home-button-art" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+          <span class="home-button-copy">
+            <span>Server Status</span>
+            <small>Game server uptime and player counts</small>
+          </span>
+        </a>
+
+        <a class="home-button party-button" href="./party.html">
+          <span class="home-button-art" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+          <span class="home-button-copy">
+            <span>Pokemon Fusion Party</span>
+            <small>Current Infinite Fusion team</small>
+          </span>
+        </a>
       </div>
-      <div class="summary-panel" aria-live="polite">
-        <span class="summary-value" id="online-count">--</span>
-        <span class="summary-label">servers online</span>
-      </div>
-    </header>
-
-    <section class="server-grid" aria-label="Game server status">
-      <article class="server-card" data-server-card="minecraft">
-        <div class="server-art minecraft-art" aria-hidden="true">
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
-        <div class="server-content">
-          <div class="server-topline">
-            <div>
-              <p class="game-label">Minecraft</p>
-              <h2>Dylon's Prominence II</h2>
-            </div>
-            <span class="status-pill is-loading" data-status>Checking</span>
-          </div>
-
-          <dl class="metric-grid">
-            <div>
-              <dt>Players</dt>
-              <dd data-players>--</dd>
-            </div>
-            <div>
-              <dt>Latency</dt>
-              <dd data-latency>--</dd>
-            </div>
-            <div>
-              <dt>Version</dt>
-              <dd data-version>--</dd>
-            </div>
-            <div>
-              <dt>Last Check</dt>
-              <dd data-checked>--</dd>
-            </div>
-          </dl>
-        </div>
-      </article>
-
-      <article class="server-card" data-server-card="valheim">
-        <div class="server-art valheim-art" aria-hidden="true">
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
-        <div class="server-content">
-          <div class="server-topline">
-            <div>
-              <p class="game-label">Valheim</p>
-              <h2>Grim's Goons</h2>
-            </div>
-            <span class="status-pill is-loading" data-status>Checking</span>
-          </div>
-
-          <dl class="metric-grid">
-            <div>
-              <dt>Players</dt>
-              <dd data-players>--</dd>
-            </div>
-            <div>
-              <dt>Latency</dt>
-              <dd data-latency>--</dd>
-            </div>
-            <div>
-              <dt>World</dt>
-              <dd data-world>--</dd>
-            </div>
-            <div>
-              <dt>Last Check</dt>
-              <dd data-checked>--</dd>
-            </div>
-          </dl>
-        </div>
-      </article>
-
-      <article class="server-card" data-server-card="zomboid">
-        <div class="server-art zomboid-art" aria-hidden="true">
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
-        <div class="server-content">
-          <div class="server-topline">
-            <div>
-              <p class="game-label">Project Zomboid</p>
-              <h2>Zomboid</h2>
-            </div>
-            <span class="status-pill is-loading" data-status>Checking</span>
-          </div>
-
-          <dl class="metric-grid">
-            <div>
-              <dt>Players</dt>
-              <dd data-players>--</dd>
-            </div>
-            <div>
-              <dt>Latency</dt>
-              <dd data-latency>--</dd>
-            </div>
-            <div>
-              <dt>Map</dt>
-              <dd data-world>--</dd>
-            </div>
-            <div>
-              <dt>Last Check</dt>
-              <dd data-checked>--</dd>
-            </div>
-          </dl>
-        </div>
-      </article>
     </section>
-
-    <footer class="status-footer">
-      <p id="refresh-note">Refreshing status...</p>
-      <button class="refresh-button" type="button" id="refresh-button" aria-label="Refresh server status">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M20 6v5h-5"></path>
-          <path d="M4 18v-5h5"></path>
-          <path d="M18.5 9A7 7 0 0 0 6.4 6.6L4 9"></path>
-          <path d="M5.5 15a7 7 0 0 0 12.1 2.4L20 15"></path>
-        </svg>
-      </button>
-    </footer>
   </main>
-
-  <script>
-    const API_BASE = "https://api.logangrimason.com/serverstatus";
-    const REFRESH_MS = 60000;
-
-    const serverLabels = {
-      minecraft: {
-        endpoint: `${API_BASE}/minecraft`,
-        versionKey: "version"
-      },
-      valheim: {
-        endpoint: `${API_BASE}/valheim`,
-        versionKey: "map"
-      },
-      zomboid: {
-        endpoint: `${API_BASE}/zomboid`,
-        versionKey: "map"
-      }
-    };
-
-    const serverIds = Object.keys(serverLabels);
-
-    const onlineCount = document.querySelector("#online-count");
-    const refreshNote = document.querySelector("#refresh-note");
-    const refreshButton = document.querySelector("#refresh-button");
-
-    function firstNumber(...values) {
-      return values.find((value) => typeof value === "number");
-    }
-
-    function formatPlayers(server) {
-      const players = server?.players;
-
-      if (!players || typeof players.online !== "number") {
-        if (Array.isArray(players)) {
-          const maxPlayers = firstNumber(server?.max_players, server?.players_max);
-          return typeof maxPlayers === "number" ? `${players.length}/${maxPlayers}` : String(players.length);
-        }
-
-        const onlinePlayers = firstNumber(server?.players_online, server?.player_count, server?.online_players);
-        const maxPlayers = firstNumber(server?.max_players, server?.players_max);
-
-        if (typeof onlinePlayers === "number") {
-          return typeof maxPlayers === "number" ? `${onlinePlayers}/${maxPlayers}` : String(onlinePlayers);
-        }
-
-        return "--";
-      }
-
-      return typeof players.max === "number"
-        ? `${players.online}/${players.max}`
-        : String(players.online);
-    }
-
-    function formatDetail(server, id) {
-      const detailKeys = [serverLabels[id].versionKey, "version", "map"];
-
-      for (const key of detailKeys) {
-        if (server?.[key]) {
-          return server[key];
-        }
-      }
-
-      return "--";
-    }
-
-    function formatLatency(latency) {
-      return typeof latency === "number" ? `${Math.round(latency)} ms` : "--";
-    }
-
-    function formatCheckedAt(value) {
-      if (!value) {
-        return "--";
-      }
-
-      const checkedDate = new Date(value);
-      if (Number.isNaN(checkedDate.getTime())) {
-        return "--";
-      }
-
-      return checkedDate.toLocaleTimeString([], {
-        hour: "numeric",
-        minute: "2-digit"
-      });
-    }
-
-    function setCardState(id, server, failed = false) {
-      const card = document.querySelector(`[data-server-card="${id}"]`);
-      const status = card.querySelector("[data-status]");
-      const players = card.querySelector("[data-players]");
-      const latency = card.querySelector("[data-latency]");
-      const checked = card.querySelector("[data-checked]");
-      const version = card.querySelector("[data-version], [data-world]");
-
-      card.classList.toggle("is-offline", failed || !server?.online);
-      status.className = "status-pill";
-
-      if (failed) {
-        status.classList.add("is-error");
-        status.textContent = "Unknown";
-        players.textContent = "--";
-        latency.textContent = "--";
-        version.textContent = "--";
-        checked.textContent = "--";
-        return;
-      }
-
-      status.classList.add(server.online ? "is-online" : "is-offline");
-      status.textContent = server.online ? "Online" : "Offline";
-      players.textContent = formatPlayers(server);
-      latency.textContent = formatLatency(server.latency_ms);
-      checked.textContent = formatCheckedAt(server.checked_at);
-      version.textContent = formatDetail(server, id);
-    }
-
-    async function fetchServers() {
-      const response = await fetch(`${API_BASE}/api`, { cache: "no-store" });
-      if (!response.ok) {
-        throw new Error("Aggregate status request failed");
-      }
-
-      const payload = await response.json();
-      if (!Array.isArray(payload.servers)) {
-        throw new Error("Aggregate status response did not include servers");
-      }
-
-      return Object.fromEntries(payload.servers.map((server) => [server.id, server]));
-    }
-
-    async function fetchServer(id) {
-      const response = await fetch(serverLabels[id].endpoint, { cache: "no-store" });
-      if (!response.ok) {
-        throw new Error(`${id} status request failed`);
-      }
-
-      return response.json();
-    }
-
-    async function loadStatus() {
-      refreshButton.disabled = true;
-      refreshNote.textContent = "Refreshing status...";
-
-      const latest = {};
-
-      try {
-        Object.assign(latest, await fetchServers());
-      } catch {
-        await Promise.all(serverIds.map(async (id) => {
-          try {
-            latest[id] = await fetchServer(id);
-          } catch {
-            latest[id] = null;
-          }
-        }));
-      }
-
-      await Promise.all(serverIds
-        .filter((id) => !latest[id])
-        .map(async (id) => {
-          try {
-            latest[id] = await fetchServer(id);
-          } catch {
-            latest[id] = null;
-          }
-        }));
-
-      let onlineTotal = 0;
-      serverIds.forEach((id) => {
-        const server = latest[id];
-        setCardState(id, server, !server);
-        if (server?.online) {
-          onlineTotal += 1;
-        }
-      });
-
-      onlineCount.textContent = `${onlineTotal}/${serverIds.length}`;
-      refreshNote.textContent = `Updated ${new Date().toLocaleTimeString([], {
-        hour: "numeric",
-        minute: "2-digit"
-      })}`;
-      refreshButton.disabled = false;
-    }
-
-    refreshButton.addEventListener("click", loadStatus);
-    loadStatus();
-    window.setInterval(loadStatus, REFRESH_MS);
-  </script>
 </body>
 </html>
